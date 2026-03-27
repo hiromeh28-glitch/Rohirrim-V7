@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROHIRRIM | FORGE-MASTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #D4AF37; --crimson: #8B0000; --cyan: #00FFFF; --void: #050505; --phosphor: #00FF41; }
+        body { background-color: var(--void); color: var(--phosphor); font-family: 'Courier Prime', monospace; background-image: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), url('https://w0.peakpx.com/wallpaper/130/377/HD-wallpaper-warhammer-40-000-adeptus-mechanicus-video-game-warhammer-40-000-mechanicus.jpg'); background-size: cover; background-attachment: fixed; }
+        .slate-frame { border: 2px solid var(--gold); background: rgba(8, 8, 8, 0.98); box-shadow: 0 0 25px rgba(139, 0, 0, 0.4); clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)); }
+        input, select { background: #000; border: 1px solid var(--crimson); color: var(--phosphor); padding: 5px; outline: none; font-size: 0.8rem; }
+        .btn-preset { border: 1px solid var(--gold); padding: 6px 10px; font-size: 9px; transition: 0.3s; background: rgba(40, 0, 0, 0.6); font-weight: bold; }
+        .btn-active { background: var(--crimson); color: var(--gold); box-shadow: 0 0 10px var(--crimson); }
+        .label-gold { color: var(--gold); font-size: 0.65rem; text-transform: uppercase; font-weight: bold; }
+        .custom-forge { background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--gold); }
+        input[type=range] { -webkit-appearance: none; background: #1a1a1a; height: 4px; border-radius: 5px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 15px; width: 15px; background: var(--cyan); cursor: pointer; border: 1px solid white; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div id="auth-gate" class="fixed inset-0 bg-black z-[100] flex items-center justify-center">
+        <div class="slate-frame p-8 w-80 text-center bg-black border-2 border-yellow-600">
+            <h2 class="label-gold text-xl mb-6">Forge Identity Required</h2>
+            <input type="text" id="login-user" placeholder="Username" class="w-full mb-3 p-2 bg-black border border-red-900 text-green-400">
+            <input type="password" id="login-pass" placeholder="Passkey" class="w-full mb-6 p-2 bg-black border border-red-900 text-green-400">
+            
+            <div class="space-y-3">
+                <button onclick="authAction('login')" id="btn-login" class="w-full py-2 bg-red-900 border border-gold font-bold hover:bg-yellow-600 hover:text-black transition uppercase text-xs">Login</button>
+                <p class="text-[9px] text-gray-600 mt-2 uppercase tracking-tighter">Public Registration Closed</p>
+            </div>
+            
+            <p id="auth-msg" class="text-[10px] mt-4 font-bold uppercase tracking-widest hidden"></p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <header class="slate-frame p-4 text-center flex justify-between items-center">
+            <div class="w-24"></div> <div>
+                <h1 style="font-family: 'MedievalSharp';" class="text-4xl text-yellow-500 uppercase">Rohirrim Forge-Master</h1>
+                <p class="text-[9px] text-red-600 tracking-[0.4em] uppercase font-bold italic">Sacred Profit Inscription // V11.0</p>
+            </div>
+            <button onclick="location.reload()" class="text-[8px] border border-red-900 px-2 py-1 hover:bg-red-900">LOGOUT</button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 space-y-4">
+                <div class="slate-frame p-5 border-dashed border-cyan-900 bg-cyan-950/10">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="label-gold text-cyan-400">Resource Return Rate (RRR)</label>
+                        <span id="rrr-display" class="text-cyan-400 font-bold text-xl">43.5%</span>
+                    </div>
+                    <input type="range" id="rrr-range" min="0" max="60" step="0.1" value="43.5" class="w-full" oninput="updateRRR(this.value)">
+                    <div class="grid grid-cols-4 gap-2 mt-3">
+                        <button onclick="updateRRR(0)" class="text-[8px] border border-gray-700 py-1 hover:bg-gray-800">NO RETURN (0%)</button>
+                        <button onclick="updateRRR(15.2)" class="text-[8px] border border-cyan-900 py-1 hover:bg-cyan-900">ROYAL (15.2%)</button>
+                        <button onclick="updateRRR(43.5)" class="text-[8px] border border-cyan-500 py-1 bg-cyan-900/40">FOCUS (43.5%)</button>
+                        <button onclick="updateRRR(53.4)" class="text-[8px] border border-red-900 py-1 hover:bg-red-900 font-bold">OUTLANDS (53.4%)</button>
+                    </div>
+                </div>
+
+                <div class="slate-frame p-5">
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="setCategory('gear')" id="btn-gear" class="btn-preset btn-active">GEAR</button>
+                        <button onclick="setCategory('potion')" id="btn-potion" class="btn-preset">ALCHEMICAL</button>
+                        <button onclick="setCategory('food')" id="btn-food" class="btn-preset">PROVISION</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="label-gold">Archive Patterns</label><select id="item-dropdown" class="w-full" onchange="loadRecipe()"></select></div>
+                        <div><label class="label-gold">Batch Size (Clicks)</label><input type="number" id="batchSize" value="1" class="w-full" oninput="commenceRite()"></div>
+                    </div>
+                    <div id="material-list" class="mt-4 space-y-2"></div>
+                </div>
+
+                <div class="slate-frame p-5 custom-forge">
+                    <h3 class="label-gold mb-3 text-cyan-400">III. Inscribe New Pattern</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <input type="text" id="customName" placeholder="Item Name">
+                        <select id="customCat">
+                            <option value="gear">Category: Gear</option>
+                            <option value="potion">Category: Potion</option>
+                            <option value="food">Category: Food</option>
+                        </select>
+                        <input type="number" id="customYield" placeholder="Yield per Craft">
+                    </div>
+                    <div id="custom-mats-input" class="space-y-2 mb-3">
+                        <div class="grid grid-cols-12 gap-2">
+                            <input type="text" class="col-span-8 c-mat-n" placeholder="Material Name">
+                            <input type="number" class="col-span-4 c-mat-q" placeholder="Qty">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="addCustomMatRow()" class="text-[9px] text-gold border border-gold px-2 py-1">Add Material Row</button>
+                        <button onclick="saveToArchive()" class="bg-yellow-600 text-black px-4 py-1 text-[10px] font-bold uppercase">Save Pattern</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-4 slate-frame p-6 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-center text-yellow-500 font-bold border-b border-red-900 pb-2">FORGE ANALYTICS</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between border-b border-red-900/20 py-1">
+                            <span class="label-gold">Cost Per Craft</span>
+                            <span id="res-unit-cost" class="text-white text-sm">0 S</span>
+                        </div>
+                        <div class="flex justify-between border-b border-red-900/20 py-1">
+                            <span class="label-gold">Net Profit / Craft</span>
+                            <span id="res-unit-profit" class="text-white text-sm">0 S</span>
+                        </div>
+                        <div class="flex justify-between border-b border-red-900/20 py-1">
+                            <span class="label-gold">Total Investment</span>
+                            <span id="res-invest" class="text-white text-sm">0 S</span>
+                        </div>
+                        <div class="bg-cyan-900/20 p-4 border border-cyan-800 text-center mt-4">
+                            <label class="label-gold text-cyan-400">Silver Per Focus</label>
+                            <div id="res-sf" class="text-4xl font-bold text-cyan-400">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 space-y-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="label-gold">Tax Rate:</label>
+                        <div class="flex gap-2">
+                            <button id="tax-std" onclick="updateTax(0.065)" class="text-[9px] px-2 py-1 border border-red-900 bg-red-950">6.5% (Market)</button>
+                            <button id="tax-low" onclick="updateTax(0.03)" class="text-[9px] px-2 py-1 border border-gray-700">3.0% (Private)</button>
+                        </div>
+                    </div>
+                    <input type="number" id="sellPrice" class="w-full py-3 text-2xl font-bold text-center border-2 border-yellow-600 text-yellow-500 bg-black" placeholder="Sell Price (Unit)" oninput="commenceRite()">
+                    <button onclick="commenceRite()" class="w-full py-4 bg-red-900 border-2 border-yellow-500 font-bold uppercase hover:bg-yellow-600 hover:text-black transition">Commence Rite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FORGE_VAULT_URL = "https://script.google.com/macros/s/AKfycbzs26IKupC-wqsevZfweJQTOOhXSr9B3BXzJV3hNhV_mm0b4xyT0V89Q1WC_ZAD0MLg/exec";
+
+        let currentRRR = 0.435;
+        let currentTax = 0.065;
+        let activeCat = 'gear';
+
+        let ARCHIVE = JSON.parse(localStorage.getItem('rohirrim_custom_archive')) || {
+            gear: [{ name: "T8 Greataxe", mats: [{ n: "Metal Bar", q: 20 }, { n: "Plank", q: 12 }], yield: 1 }],
+            potion: [{ name: "T8 Poison", mats: [{ n: "Thistle", q: 12 }, { n: "Foxglove", q: 12 }, { n: "Schnapps", q: 1 }], yield: 5 }],
+            food: [{ name: "T8 Beef Stew", mats: [{ n: "Beef", q: 24 }, { n: "Cabbage", q: 48 }, { n: "Bread", q: 4 }], yield: 10 }]
+        };
+
+        // --- Auth Functions ---
+        async function authAction(type) {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const msg = document.getElementById('auth-msg');
+
+            if (!user || !pass) {
+                showAuthMsg("Inputs required.", "#ff0000");
+                return;
+            }
+
+            showAuthMsg("Communicating with Archive...", "#D4AF37");
+
+            try {
+                const response = await fetch(FORGE_VAULT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: type, user: user, pass: pass })
+                });
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showAuthMsg(result.msg, "#00FF41");
+                    setTimeout(() => {
+                        document.getElementById('auth-gate').style.display = 'none';
+                    }, 1000);
+                } else {
+                    showAuthMsg(result.msg, "#ff0000");
+                }
+            } catch (error) {
+                showAuthMsg("Warp Interference: Connection Failed.", "#ff0000");
+            }
+        }
+
+        function showAuthMsg(text, color) {
+            const msg = document.getElementById('auth-msg');
+            msg.innerText = text;
+            msg.style.color = color;
+            msg.classList.remove('hidden');
+        }
+
+        // --- Core Forge Functions ---
+        function setCategory(cat) {
+            activeCat = cat;
+            document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('btn-active'));
+            document.getElementById('btn-' + cat).classList.add('btn-active');
+            updateDropdown();
+        }
+
+        function updateRRR(val) {
+            currentRRR = parseFloat(val) / 100;
+            document.getElementById('rrr-display').innerText = val + "%";
+            document.getElementById('rrr-range').value = val;
+            commenceRite();
+        }
+
+        function updateTax(val) {
+            currentTax = val;
+            document.getElementById('tax-std').classList.toggle('bg-red-950', val === 0.065);
+            document.getElementById('tax-low').classList.toggle('bg-red-950', val === 0.03);
+            commenceRite();
+        }
+
+        function updateDropdown() {
+            const drop = document.getElementById('item-dropdown');
+            drop.innerHTML = ARCHIVE[activeCat].map(i => `<option value="${i.name}">${i.name}</option>`).join('');
+            loadRecipe();
+        }
+
+        function addCustomMatRow() {
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-12 gap-2 mt-2';
+            div.innerHTML = `<input type="text" class="col-span-8 c-mat-n" placeholder="Material Name"><input type="number" class="col-span-4 c-mat-q" placeholder="Qty">`;
+            document.getElementById('custom-mats-input').appendChild(div);
+        }
+
+        function saveToArchive() {
+            const name = document.getElementById('customName').value;
+            const cat = document.getElementById('customCat').value;
+            const y = parseInt(document.getElementById('customYield').value) || 1;
+            const matNames = document.querySelectorAll('.c-mat-n');
+            const matQtys = document.querySelectorAll('.c-mat-q');
+            let mats = [];
+            matNames.forEach((n, i) => { if(n.value) mats.push({ n: n.value, q: parseInt(matQtys[i].value) || 0 }); });
+            if(!name || mats.length === 0) return alert("Pattern incomplete.");
+            ARCHIVE[cat].push({ name, mats, yield: y });
+            localStorage.setItem('rohirrim_custom_archive', JSON.stringify(ARCHIVE));
+            alert("Pattern inscribed.");
+            setCategory(cat);
+        }
+
+        function loadRecipe() {
+            const item = ARCHIVE[activeCat].find(i => i.name === document.getElementById('item-dropdown').value);
+            const list = document.getElementById('material-list');
+            list.innerHTML = `<div class="grid grid-cols-12 gap-2 text-[8px] text-yellow-700 mb-2 uppercase font-black"><div class="col-span-8">Material</div><div class="col-span-4 text-center">Price Per Unit</div></div>`;
+            item.mats.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'grid grid-cols-12 gap-2 mat-row items-center';
+                div.innerHTML = `<div class="col-span-8 text-xs">${m.n} (x${m.q})</div><div class="col-span-4"><input type="number" class="mat-price text-center w-full" placeholder="Price" oninput="commenceRite()"></div><input type="hidden" class="mat-q-hidden" value="${m.q}">`;
+                list.appendChild(div);
+            });
+            commenceRite();
+        }
+
+        function commenceRite() {
+            const batch = parseFloat(document.getElementById('batchSize').value) || 1;
+            const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const item = ARCHIVE[activeCat].find(i => i.name === document.getElementById('item-dropdown').value);
+            if (!item) return;
+
+            let rawCostPerSingleCraft = 0;
+            document.querySelectorAll('.mat-row').forEach(row => {
+                const q = parseFloat(row.querySelector('.mat-q-hidden').value);
+                const p = parseFloat(row.querySelector('.mat-price').value) || 0;
+                rawCostPerSingleCraft += (q * p);
+            });
+
+            const netMaterialCostPerCraft = rawCostPerSingleCraft * (1 - currentRRR);
+            const totalRawInvestment = rawCostPerSingleCraft * batch;
+            const revenuePerCraft = (sellPrice * (item.yield || 1)) * (1 - currentTax);
+            const profitPerCraft = revenuePerCraft - netMaterialCostPerCraft;
+            
+            document.getElementById('res-invest').innerText = Math.round(totalRawInvestment).toLocaleString() + " S";
+            document.getElementById('res-unit-cost').innerText = Math.round(rawCostPerSingleCraft).toLocaleString() + " S";
+            
+            const profitEl = document.getElementById('res-unit-profit');
+            profitEl.innerText = Math.round(profitPerCraft).toLocaleString() + " S";
+            profitEl.style.color = profitPerCraft > 0 ? "#00FF41" : "#FF3131";
+            profitEl.style.textShadow = profitPerCraft > 0 ? "0 0 10px rgba(0,255,65,0.4)" : "none";
+
+            const focusPerCraft = 250; 
+            const sfp = profitPerCraft / focusPerCraft;
+            document.getElementById('res-sf').innerText = Math.max(0, Math.round(sfp)).toLocaleString();
+        }
+
+        window.onload = () => updateDropdown();
+    </script>
+</body>
+</html>
