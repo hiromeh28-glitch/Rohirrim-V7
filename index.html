@@ -41,7 +41,7 @@
             <div id="access-status" class="w-32 text-[10px] text-cyan-400 font-bold uppercase">Connecting...</div> 
             <div>
                 <h1 style="font-family: 'MedievalSharp';" class="text-4xl text-yellow-500 uppercase">Rohirrim Forge-Master</h1>
-                <p class="text-[9px] text-red-600 tracking-[0.4em] uppercase font-bold italic">Sacred Profit Inscription // V11.0</p>
+                <p class="text-[9px] text-red-600 tracking-[0.4em] uppercase font-bold italic">Sacred Profit Inscription // V12.0</p>
             </div>
             <button onclick="location.reload()" class="text-[8px] border border-red-900 px-2 py-1 hover:bg-red-900">LOGOUT</button>
         </header>
@@ -68,6 +68,15 @@
                         <button onclick="setCategory('potion')" id="btn-potion" class="btn-preset">ALCHEMICAL</button>
                         <button onclick="setCategory('food')" id="btn-food" class="btn-preset">PROVISION</button>
                     </div>
+
+                    <div class="bg-red-950/20 border border-red-900/40 p-3 mb-4 rounded">
+                        <label class="label-gold text-[9px] block mb-1">Sacred Artifact / Boss Drop (0% Return)</label>
+                        <div class="grid grid-cols-12 gap-2">
+                            <input type="text" id="artifact-name" class="col-span-7 text-[10px] bg-black border border-red-900" placeholder="Artifact Name (Optional)">
+                            <input type="number" id="artifact-price" class="col-span-5 text-center font-bold text-yellow-500 bg-black border border-red-900" placeholder="Price" oninput="commenceRite()">
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="label-gold">Archive Patterns</label><select id="item-dropdown" class="w-full" onchange="loadRecipe()"></select></div>
                         <div><label class="label-gold">Batch Size (Clicks)</label><input type="number" id="batchSize" value="1" class="w-full" oninput="commenceRite()"></div>
@@ -150,7 +159,6 @@
             food: [{ name: "T8 Beef Stew", mats: [{ n: "Beef", q: 24 }, { n: "Cabbage", q: 48 }, { n: "Bread", q: 4 }], yield: 10 }]
         };
 
-        // --- AUTH ACTION FIXED ---
         async function authAction(type) {
             const userBox = document.getElementById('login-user');
             const passBox = document.getElementById('login-pass');
@@ -175,11 +183,9 @@
                 const data = await response.json();
 
                 if (data.status === "success") {
-                    // Unlock the Interface
                     document.getElementById('auth-gate').style.display = 'none';
                     document.getElementById('main-dashboard').style.display = 'block';
                     
-                    // Display Remaining Days
                     if (data.expiry) {
                         const today = new Date();
                         const expire = new Date(data.expiry);
@@ -201,7 +207,6 @@
             }
         }
 
-        // --- Forge Operations ---
         function setCategory(cat) {
             activeCat = cat;
             document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('btn-active'));
@@ -269,23 +274,30 @@
         function commenceRite() {
             const batch = parseFloat(document.getElementById('batchSize').value) || 1;
             const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+            const artifactPrice = parseFloat(document.getElementById('artifact-price').value) || 0; 
             const item = ARCHIVE[activeCat].find(i => i.name === document.getElementById('item-dropdown').value);
+            
             if (!item) return;
 
-            let rawCostPerSingleCraft = 0;
+            let commonMaterialRawCost = 0;
             document.querySelectorAll('.mat-row').forEach(row => {
                 const q = parseFloat(row.querySelector('.mat-q-hidden').value);
                 const p = parseFloat(row.querySelector('.mat-price').value) || 0;
-                rawCostPerSingleCraft += (q * p);
+                commonMaterialRawCost += (q * p);
             });
 
-            const netMaterialCostPerCraft = rawCostPerSingleCraft * (1 - currentRRR);
-            const totalRawInvestment = rawCostPerSingleCraft * batch;
+            // MATH LOGIC V12.0: 
+            // Common Mats get the RRR refund, Artifacts get 0% refund.
+            const netCommonCostPerCraft = commonMaterialRawCost * (1 - currentRRR);
+            const totalActualCostPerCraft = netCommonCostPerCraft + artifactPrice;
+
+            // Totals
+            const totalRawInvestment = (commonMaterialRawCost + artifactPrice) * batch;
             const revenuePerCraft = (sellPrice * (item.yield || 1)) * (1 - currentTax);
-            const profitPerCraft = revenuePerCraft - netMaterialCostPerCraft;
+            const profitPerCraft = revenuePerCraft - totalActualCostPerCraft;
             
             document.getElementById('res-invest').innerText = Math.round(totalRawInvestment).toLocaleString() + " S";
-            document.getElementById('res-unit-cost').innerText = Math.round(rawCostPerSingleCraft).toLocaleString() + " S";
+            document.getElementById('res-unit-cost').innerText = Math.round(commonMaterialRawCost + artifactPrice).toLocaleString() + " S";
             
             const profitEl = document.getElementById('res-unit-profit');
             profitEl.innerText = Math.round(profitPerCraft).toLocaleString() + " S";
