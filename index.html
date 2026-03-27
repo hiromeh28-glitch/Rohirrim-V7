@@ -36,9 +36,10 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div id="main-dashboard" style="display:none;" class="max-w-7xl mx-auto space-y-6">
         <header class="slate-frame p-4 text-center flex justify-between items-center">
-            <div class="w-24"></div> <div>
+            <div id="access-status" class="w-32 text-[10px] text-cyan-400 font-bold uppercase">Connecting...</div> 
+            <div>
                 <h1 style="font-family: 'MedievalSharp';" class="text-4xl text-yellow-500 uppercase">Rohirrim Forge-Master</h1>
                 <p class="text-[9px] text-red-600 tracking-[0.4em] uppercase font-bold italic">Sacred Profit Inscription // V11.0</p>
             </div>
@@ -100,7 +101,7 @@
 
             <div class="lg:col-span-4 slate-frame p-6 flex flex-col justify-between">
                 <div class="space-y-6">
-                    <h2 class="text-center text-yellow-500 font-bold border-b border-red-900 pb-2">FORGE ANALYTICS</h2>
+                    <h2 class="text-center text-yellow-500 font-bold border-b border-red-900 pb-2 uppercase">Forge Analytics</h2>
                     <div class="space-y-3">
                         <div class="flex justify-between border-b border-red-900/20 py-1">
                             <span class="label-gold">Cost Per Craft</span>
@@ -129,7 +130,7 @@
                             <button id="tax-low" onclick="updateTax(0.03)" class="text-[9px] px-2 py-1 border border-gray-700">3.0% (Private)</button>
                         </div>
                     </div>
-                    <input type="number" id="sellPrice" class="w-full py-3 text-2xl font-bold text-center border-2 border-yellow-600 text-yellow-500 bg-black" placeholder="Sell Price (Unit)" oninput="commenceRite()">
+                    <input type="number" id="sellPrice" class="w-full py-3 text-2xl font-bold text-center border-2 border-yellow-600 text-yellow-500 bg-black outline-none" placeholder="Sell Price (Unit)" oninput="commenceRite()">
                     <button onclick="commenceRite()" class="w-full py-4 bg-red-900 border-2 border-yellow-500 font-bold uppercase hover:bg-yellow-600 hover:text-black transition">Commence Rite</button>
                 </div>
             </div>
@@ -149,54 +150,58 @@
             food: [{ name: "T8 Beef Stew", mats: [{ n: "Beef", q: 24 }, { n: "Cabbage", q: 48 }, { n: "Bread", q: 4 }], yield: 10 }]
         };
 
-        // --- Auth Functions ---
-        async function auth(type) {
-    const user = document.getElementById('user').value;
-    const pass = document.getElementById('pass').value;
-    const msg = document.getElementById('msg');
-
-    msg.innerText = "Consulting the Archives...";
-
-    try {
-        const response = await fetch(FORGE_VAULT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: type, user: user, pass: pass })
-        });
-        const data = await response.json();
-
-        if (data.status === "success") {
-            // SUCCESS LOGIC
-            document.getElementById('auth-gate').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            
-            // Calculate Days Remaining
-            if (data.expiry) {
-                const today = new Date();
-                const expire = new Date(data.expiry);
-                const diffTime = expire - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                // Show status bar
-                const status = document.getElementById('access-status');
-                status.innerHTML = `Access: <span class="text-green-400 font-bold">${diffDays} Days Remaining</span>`;
-            }
-        } else {
-            msg.innerText = data.msg;
-            msg.style.color = "#ef4444";
-        }
-    } catch (err) {
-        msg.innerText = "Warp Interference: Connection Failed.";
-    }
-}
-
-        function showAuthMsg(text, color) {
+        // --- AUTH ACTION FIXED ---
+        async function authAction(type) {
+            const userBox = document.getElementById('login-user');
+            const passBox = document.getElementById('login-pass');
             const msg = document.getElementById('auth-msg');
-            msg.innerText = text;
-            msg.style.color = color;
+
+            if (!userBox.value || !passBox.value) {
+                msg.innerText = "IDENTITY REQUIRED";
+                msg.style.color = "var(--crimson)";
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            msg.innerText = "CONSULTING THE ARCHIVES...";
+            msg.style.color = "var(--gold)";
             msg.classList.remove('hidden');
+
+            try {
+                const response = await fetch(FORGE_VAULT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: type, user: userBox.value, pass: passBox.value })
+                });
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // Unlock the Interface
+                    document.getElementById('auth-gate').style.display = 'none';
+                    document.getElementById('main-dashboard').style.display = 'block';
+                    
+                    // Display Remaining Days
+                    if (data.expiry) {
+                        const today = new Date();
+                        const expire = new Date(data.expiry);
+                        const diffTime = expire - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        const status = document.getElementById('access-status');
+                        if (status) {
+                            status.innerHTML = `Access: <span style="color:var(--phosphor)">${diffDays} Days Remaining</span>`;
+                        }
+                    }
+                } else {
+                    msg.innerText = data.msg;
+                    msg.style.color = "var(--crimson)";
+                }
+            } catch (err) {
+                msg.innerText = "WARP INTERFERENCE: CHECK CONNECTION.";
+                msg.style.color = "var(--crimson)";
+            }
         }
 
-        // --- Core Forge Functions ---
+        // --- Forge Operations ---
         function setCategory(cat) {
             activeCat = cat;
             document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('btn-active'));
@@ -250,12 +255,14 @@
             const item = ARCHIVE[activeCat].find(i => i.name === document.getElementById('item-dropdown').value);
             const list = document.getElementById('material-list');
             list.innerHTML = `<div class="grid grid-cols-12 gap-2 text-[8px] text-yellow-700 mb-2 uppercase font-black"><div class="col-span-8">Material</div><div class="col-span-4 text-center">Price Per Unit</div></div>`;
-            item.mats.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'grid grid-cols-12 gap-2 mat-row items-center';
-                div.innerHTML = `<div class="col-span-8 text-xs">${m.n} (x${m.q})</div><div class="col-span-4"><input type="number" class="mat-price text-center w-full" placeholder="Price" oninput="commenceRite()"></div><input type="hidden" class="mat-q-hidden" value="${m.q}">`;
-                list.appendChild(div);
-            });
+            if(item) {
+                item.mats.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'grid grid-cols-12 gap-2 mat-row items-center';
+                    div.innerHTML = `<div class="col-span-8 text-xs">${m.n} (x${m.q})</div><div class="col-span-4"><input type="number" class="mat-price text-center w-full" placeholder="Price" oninput="commenceRite()"></div><input type="hidden" class="mat-q-hidden" value="${m.q}">`;
+                    list.appendChild(div);
+                });
+            }
             commenceRite();
         }
 
@@ -282,7 +289,7 @@
             
             const profitEl = document.getElementById('res-unit-profit');
             profitEl.innerText = Math.round(profitPerCraft).toLocaleString() + " S";
-            profitEl.style.color = profitPerCraft > 0 ? "#00FF41" : "#FF3131";
+            profitEl.style.color = profitPerCraft > 0 ? "var(--phosphor)" : "var(--crimson)";
             profitEl.style.textShadow = profitPerCraft > 0 ? "0 0 10px rgba(0,255,65,0.4)" : "none";
 
             const focusPerCraft = 250; 
